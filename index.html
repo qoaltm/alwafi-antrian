@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Antrian — Al Wafi International Islamic Boarding School</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('admin')">⚙️ Panel Admin</div>
+  <div class="tab" onclick="switchTab('editor')">✏️ Edit</div>
+  <div class="tab" onclick="switchTab('tv')">📺 Tampilan TV</div>
+</div>
+
+<!-- ADMIN -->
+<div id="panel-admin" class="panel active">
+  <div class="tts-bar">
+    <span style="font-size:20px">🔊</span>
+    <span class="tts-label">Suara otomatis — nama dipanggil saat checklist hadir</span>
+    <span class="tts-status" id="tts-status" style="color:#22c55e">Siap</span>
+    <div class="tts-vol"><span>Volume:</span><input type="range" min="0" max="1" step="0.1" value="0.9" id="tts-vol" oninput="ttsVol=parseFloat(this.value)"></div>
+    <button class="btn-test" onclick="testTTS()">Test Suara</button>
+    <button class="btn-test" style="border-color:#fca5a5;color:#dc2626;background:#fef2f2" onclick="stopTTS()">⏹ Stop Suara</button>
+    <button class="btn-test" id="btn-mute" style="border-color:#7c3aed;color:#7c3aed;background:#f5f3ff" onclick="toggleMute()">🔕 Mute Suara</button>
+    <span id="conn-status" style="font-size:12px;font-weight:600;margin-left:8px">⏳ Menghubungkan...</span>
+  </div>
+  <div class="stats" id="stats-row"></div>
+
+  <!-- FITTING SECTION -->
+  <div class="section-divider">
+    <div class="section-divider-label">👕 Fitting Seragam</div>
+    <div class="section-divider-line"></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Antrian Aktif — Fitting</div>
+      <div id="queue-list-fitting"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Daftar Peserta Fitting</div>
+      <input class="search-bar" type="text" placeholder="Cari nama..." oninput="filterList(this.value)"/>
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter('all',this)">Semua</button>
+        <button class="filter-btn" onclick="setFilter('waiting',this)">Belum hadir</button>
+        <button class="filter-btn" onclick="setFilter('present',this)">Hadir/antri</button>
+        <button class="filter-btn" onclick="setFilter('done',this)">Selesai</button>
+      </div>
+      <div class="person-list" id="person-list-fitting"></div>
+    </div>
+  </div>
+
+  <!-- INTERVIEW SECTION -->
+  <div class="section-divider" style="margin-top:2rem">
+    <div class="section-divider-label">🎙️ Interview Siswa</div>
+    <div class="section-divider-line"></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Antrian Aktif — Interview</div>
+      <div id="queue-list-iv"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Daftar Peserta Interview</div>
+      <input class="search-bar" type="text" placeholder="Cari nama interview..." oninput="filterListIV(this.value)"/>
+      <div class="filter-row">
+        <button class="filter-btn active" id="iv-filter-btn-all" onclick="setFilterIV('all',this)">Semua</button>
+        <button class="filter-btn" onclick="setFilterIV('waiting',this)">Belum hadir</button>
+        <button class="filter-btn" onclick="setFilterIV('present',this)">Hadir/antri</button>
+        <button class="filter-btn" onclick="setFilterIV('done',this)">Selesai</button>
+      </div>
+      <div class="person-list" id="person-list-iv"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EDITOR -->
+<div id="panel-editor" class="panel">
+  <div class="editor-wrap">
+    <div class="editor-topbar">
+      <h2>✏️ Edit Daftar Peserta</h2>
+      <button class="btn-secondary" onclick="exportJSON()">💾 Simpan ke File</button>
+      <button class="btn-primary" onclick="document.getElementById('import-input').click()">📂 Muat dari File</button>
+      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(this)">
+    </div>
+    <div class="editor-info">⚠️ Perubahan nama di sini hanya berlaku untuk sesi berikutnya jika peserta belum dipanggil. Simpan ke file untuk digunakan di acara lain.</div>
+
+    <div class="section-divider"><div class="section-divider-label">👕 Peserta Fitting Seragam</div><div class="section-divider-line"></div></div>
+    <div class="editor-sections">
+      <div class="editor-col">
+        <h3><span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-size:11px">A</span> Ikhwan <span style="font-weight:400;font-size:12px;color:#aaa" id="count-a"></span></h3>
+        <ul class="editor-list" id="editor-list-a"></ul>
+        <div class="add-form">
+          <input class="add-input" type="text" id="add-a" placeholder="Tambah nama ikhwan...">
+          <button class="add-btn" onclick="addPerson('A')">+ Tambah</button>
+        </div>
+      </div>
+      <div class="editor-col">
+        <h3><span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:4px;font-size:11px">B</span> Akhwat <span style="font-weight:400;font-size:12px;color:#aaa" id="count-b"></span></h3>
+        <ul class="editor-list" id="editor-list-b"></ul>
+        <div class="add-form">
+          <input class="add-input" type="text" id="add-b" placeholder="Tambah nama akhwat...">
+          <button class="add-btn" onclick="addPerson('B')">+ Tambah</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider" style="margin-top:1.5rem"><div class="section-divider-label">🎙️ Peserta Interview</div><div class="section-divider-line"></div></div>
+    <div class="editor-sections-iv">
+      <div class="editor-col">
+        <h3><span style="background:#fde8d8;color:#c2410c;padding:2px 8px;border-radius:4px;font-size:11px">IA</span> Ruang Interview A <span style="font-weight:400;font-size:12px;color:#aaa" id="count-ia"></span></h3>
+        <ul class="editor-list" id="editor-list-ia"></ul>
+        <div class="add-form">
+          <input class="add-input" type="text" id="add-ia" placeholder="Tambah peserta Ruang IA...">
+          <button class="add-btn" style="background:#c2410c" onclick="addPersonIV('IA')">+ Tambah</button>
+        </div>
+      </div>
+      <div class="editor-col">
+        <h3><span style="background:#fdf4e8;color:#b45309;padding:2px 8px;border-radius:4px;font-size:11px">IB</span> Ruang Interview B <span style="font-weight:400;font-size:12px;color:#aaa" id="count-ib"></span></h3>
+        <ul class="editor-list" id="editor-list-ib"></ul>
+        <div class="add-form">
+          <input class="add-input" type="text" id="add-ib" placeholder="Tambah peserta Ruang IB...">
+          <button class="add-btn" style="background:#b45309" onclick="addPersonIV('IB')">+ Tambah</button>
+        </div>
+      </div>
+      <div class="editor-col">
+        <h3><span style="background:#ede8fd;color:#7c3aed;padding:2px 8px;border-radius:4px;font-size:11px">IC</span> Ruang Interview C <span style="font-weight:400;font-size:12px;color:#aaa" id="count-ic"></span></h3>
+        <ul class="editor-list" id="editor-list-ic"></ul>
+        <div class="add-form">
+          <input class="add-input" type="text" id="add-ic" placeholder="Tambah peserta Ruang IC...">
+          <button class="add-btn" style="background:#7c3aed" onclick="addPersonIV('IC')">+ Tambah</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider" style="margin-top:1.5rem"><div class="section-divider-label">🎬 Konfigurasi Video Tampilan TV</div><div class="section-divider-line"></div></div>
+    <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem">
+      <p style="font-size:13px;color:#666;margin-bottom:12px">Atur video yang tampil di panel kanan atas layar TV. Mendukung YouTube (autoplay loop) atau video lokal (berikan path/URL lengkap).</p>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+        <!-- Google Drive removed -->
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="radio" name="videoType" value="local" id="vt-local" onchange="tvVideoType='local'"> Video Lokal / URL Lain
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="add-input" type="text" id="video-url-input" placeholder="Contoh: https://youtu.be/dQw4w9WgXcQ atau /video/profil.mp4" style="flex:1" oninput="tvVideoSrc=this.value">
+        <button class="btn-primary" onclick="updateTVVideo()">▶ Terapkan</button>
+        <button class="btn-secondary" onclick="tvVideoSrc='';document.getElementById('video-url-input').value='';updateTVVideo()">✕ Hapus</button>
+      </div>
+      <p style="font-size:11px;color:#aaa;margin-top:8px">YouTube: paste URL biasa (https://youtu.be/... atau watch?v=...). Video Lokal: paste nama file (contoh: profil.mp4) — file harus berada di folder yang sama dengan HTML ini. Google Drive tidak didukung browser.</p>
+    </div>
+
+    <div class="export-section">
+      <div class="export-title">Ekspor & Impor Data</div>
+      <div class="export-btns">
+        <button class="btn-secondary" onclick="exportJSON()">💾 Simpan sebagai file .json</button>
+        <button class="btn-secondary" onclick="exportTXT()">📄 Ekspor sebagai .txt</button>
+        <button class="btn-danger" onclick="confirmReset()">🔄 Reset sesi (hapus semua status hadir)</button>
+      </div>
+      <div class="import-zone" onclick="document.getElementById('import-input').click()">
+        📂 Klik di sini untuk memuat daftar nama dari file .json yang pernah disimpan
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TV -->
+<div id="panel-tv" class="panel">
+  <div class="tv-wrap" id="tv-wrap">
+    <div class="tv-top">
+      <div class="tv-logo-area">
+        <img class="tv-logo-img" src="assets/logo.png" alt="Al Wafi Logo">
+        <div>
+          <div class="tv-school-name">Al Wafi</div>
+          <div class="tv-school-sub">International Islamic Boarding School</div>
+        </div>
+      </div>
+      <div class="tv-datetime">
+        <div class="tv-time" id="tv-clock">--:--</div>
+        <div class="tv-date" id="tv-date">--</div>
+      </div>
+      <div class="tv-header-right">
+        <button class="tv-theme-btn" id="tv-theme-toggle" onclick="toggleTVTheme()">☀️ Mode Terang</button>
+        <button class="tv-fs-btn" onclick="openFS()">⛶ Layar Penuh</button>
+      </div>
+    </div>
+
+    <div class="tv-content">
+      <div class="tv-split-container" id="tv-split-container">
+      <!-- TOP SECTION -->
+      <div class="tv-split-top" id="tv-split-top">
+      <div class="tv-top-section" id="tv-top-section">
+        <!-- PANEL 1: Now Calling -->
+        <div class="tv-now-calling-panel" id="tv-panel-calling" style="flex:1.2;min-width:0">
+          <div class="tv-panel-label">📢 Dipanggil Sekarang</div>
+          <div id="tv-now-calling-body" class="tv-now-name-wrap">
+            <div class="tv-now-empty">Belum ada yang dipanggil</div>
+          </div>
+        </div>
+        <!-- HANDLE 1 -->
+        <div class="tv-h-split-handle" id="tv-h-handle-1"></div>
+        <!-- PANEL 2: Middle Queue -->
+        <div class="tv-middle-queue-panel" id="tv-panel-queue" style="flex:1;min-width:0">
+          <div class="tv-mq-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0">
+            <div class="tv-mq-label">👕 Antrian Fitting</div>
+            <div class="tv-mq-list" id="tv-mq-fitting">
+              <div class="tv-mq-empty">Belum ada antrian</div>
+            </div>
+          </div>
+          <div class="tv-mq-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(201,168,76,0.2)">
+            <div class="tv-mq-label">🎤 Antrian Interview</div>
+            <div class="tv-mq-list" id="tv-mq-interview">
+              <div class="tv-mq-empty">Belum ada antrian</div>
+            </div>
+          </div>
+        </div>
+        <!-- HANDLE 2 -->
+        <div class="tv-h-split-handle" id="tv-h-handle-2"></div>
+        <!-- PANEL 3: Video -->
+        <div class="tv-video-panel" id="tv-video-panel" style="flex:1.2;min-width:0">
+          <div class="tv-video-placeholder">
+            <div class="tv-video-icon">🎬</div>
+            <div>Video belum dikonfigurasi</div>
+            <div style="font-size:11px;margin-top:4px;opacity:.6">Atur di tab Edit → bagian Video</div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- end tv-split-top -->
+      <div class="tv-split-handle" id="tv-split-handle"></div>
+      <div class="tv-split-bottom" id="tv-split-bottom">
+      <!-- BOTTOM SECTION: 5 Queue Rooms -->
+      <div class="tv-queue-section">
+        <div class="tv-queue-label">🕌 Antrian Ruangan</div>
+        <div class="tv-queue-row" id="tv-queue-row"></div>
+      </div>
+      </div><!-- end tv-split-bottom -->
+      </div><!-- end tv-split-container -->
+
+    <div class="tv-footer" id="tv-footer"></div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRM RESET -->
+<div class="modal-bg" id="modal-reset">
+  <div class="modal">
+    <h3>Reset Sesi?</h3>
+    <p>Semua status hadir, antrian, dan selesai akan dikembalikan ke awal. Data nama tidak berubah.</p>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">Batal</button>
+      <button class="btn-danger" onclick="doReset()">Ya, Reset</button>
+    </div>
+  </div>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
